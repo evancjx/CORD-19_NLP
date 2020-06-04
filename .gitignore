@@ -131,3 +131,4 @@ dmypy.json
 # Exclude folder
 raw_data/
 processed_data/
+tensorflow_USE/
