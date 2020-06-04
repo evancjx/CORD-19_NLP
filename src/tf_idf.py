@@ -1,69 +1,89 @@
 
+from .helper import sort_dict
 from collections import Counter
 from math import log, sqrt
+from tqdm import tqdm
+class TFIDF(object):
 
-def term_freq(doc):
-    tf = Counter()
-    tf.update(doc.split())
-    return tf
-
-def document_frequency(corpus):
-    vocabulary = set()
-    term_doc_freq = Counter() # Count the number of time the word (term) happens in different documents
-
-    corpus_doc_tf = []
-    for doc in corpus:
-        corpus_doc_tf.append(term_freq(doc))
-        doc_terms = set(doc.split())
-        vocabulary = vocabulary | doc_terms # Collect all possible vocabulary without duplicates
-        term_doc_freq.update(doc_terms) # Update term count
+    def __init__(self):
+        pass
     
-    return corpus_doc_tf, term_doc_freq, vocabulary
+    def term_freq(self, doc):
+        tf = Counter()
+        tf.update(doc.split())
+        return tf
 
-def inverse_document_frequency(corpus):
-    corpus_doc_tf, term_doc_freq, vocabulary = document_frequency(corpus)
+    def document_frequency(self, corpus):
+        if not isinstance(corpus, list):
+            raise TypeError('corpus has to be a list of documents')
+        self.corpus = corpus
 
-    '''
-        Rare items are more informative than frequent items
-        Low positive weights for frequent terms
-        High positive weights for rare terms
-    '''
-    term_inverse_doc_freq = {
-        word: log(len(corpus)/doc_freq) # Inverse Document Frequency scoring
-        for word, doc_freq in term_doc_freq.items()
-    }
-    
-    return corpus_doc_tf, term_inverse_doc_freq, vocabulary
+        vocabulary = set()
+        term_doc_freq = Counter() # Count the number of time the word (term) happens in different documents
 
-def doc_tf_idf(doc_tf, term_doc_freq, len_corpus):
-    mag_weight = 0.0
-    for term, term_freq in doc_tf.items():
-        term_freq = doc_tf[term]
-
-        if term in term_doc_freq:
-            idf = log(len_corpus / term_doc_freq[term])
-        else:
-            idf = log(len_corpus)
+        corpus_doc_tf = []
+        for doc in tqdm(
+            corpus, desc='Conducting DF (Document Frequency) on corpus'
+        ):
+            corpus_doc_tf.append(self.term_freq(doc))
+            doc_terms = set(doc.split())
+            vocabulary = vocabulary | doc_terms # Collect all possible vocabulary without duplicates
+            term_doc_freq.update(doc_terms) # Update term count
         
-        tfidf = log(1 + term_freq) * idf
+        self.corpus_doc_tf = corpus_doc_tf
+        self.term_doc_freq = term_doc_freq
+        self.vocabulary = vocabulary
 
-        doc_tf[term] = tfidf
-        mag_weight += tfidf**2
+    def inverse_document_frequency(self, corpus):
+        self.document_frequency(corpus)
 
-    mag_weight = sqrt(mag_weight)
-    
-    if mag_weight != 0:
-        for term in doc_tf:
-            doc_tf[term] /= mag_weight
-    return doc_tf
+        '''
+            Rare items are more informative than frequent items
+            Low positive weights for frequent terms
+            High positive weights for rare terms
+        '''
+        self.term_inverse_doc_freq = {
+            word: log(len(corpus)/doc_freq) # Inverse Document Frequency scoring
+            for word, doc_freq in self.term_doc_freq.items()
+        }
 
-def corpus_tf_idf(corpus):
-    corpus_doc_tf, term_doc_freq, _ = document_frequency(corpus)
-    
-    return [
-        doc_tf_idf(doc_tf, term_doc_freq, len(corpus_doc_tf))
-        for doc_tf in corpus_doc_tf
-    ], term_doc_freq
+        return self.term_inverse_doc_freq
+
+    def tfidf_text(self, doc_tf):
+        len_corpus = len(self.corpus_doc_tf)
+        mag_weight = 0.0
+        for term, term_freq in doc_tf.items():
+            term_freq = doc_tf[term]
+
+            if term in self.term_doc_freq:
+                idf = log(len_corpus / self.term_doc_freq[term])
+            else:
+                idf = log(len_corpus)
+            
+            tfidf = log(1 + term_freq) * idf
+
+            doc_tf[term] = tfidf
+            mag_weight += tfidf**2
+
+        mag_weight = sqrt(mag_weight)
+        
+        if mag_weight != 0:
+            for term in doc_tf:
+                doc_tf[term] /= mag_weight
+        return doc_tf
+
+    def tfidf_corpus(self, corpus):
+        self.document_frequency(corpus)
+        
+        self.corpus_doc_tfidf = [
+            self.tfidf_text(doc_tf)
+            for doc_tf in tqdm(
+                self.corpus_doc_tf, desc='Conducting TF-IDF on each document'
+            )
+        ]
+
+    def get_text_keywords(self, text, n_keywords=10):
+        return list(sort_dict(self.tfidf_text(self.term_freq(text)), 'value', True))[:n_keywords]
 
 from .text_preprocessing import STOP_WORDS
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -121,4 +141,4 @@ class sklearn_TFIDF(object):
     def get_text_keywords(self, text, n_keywords=10):
         return np.array(self.feature_names)[
             list(self.sort_coo(self.tfidf_text(text).tocoo()).keys())[:n_keywords]
-        ]
+        ].tolist()
