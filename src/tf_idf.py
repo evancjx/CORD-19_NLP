@@ -114,6 +114,11 @@ class sklearn_TFIDF(object):
     
         self.feature_names = self.count_vectorizer.get_feature_names()
 
+        self.corpus_doc_tfidf = [
+            self.tfidf_text(doc)
+            for doc in tqdm(corpus, desc='Conduct TFIDF for individual documents')
+        ]
+
     def tfidf_text(self, text):
         if self.feature_names is None:
             print('Conduct tfidf on corpus')
@@ -121,10 +126,12 @@ class sklearn_TFIDF(object):
         if not isinstance(text, list):
             text = [text]
 
-        return self.tfidf_transformer.transform(
-            self.count_vectorizer.transform(
-                text
-            )
+        return self.sort_coo(
+            self.tfidf_transformer.transform(
+                self.count_vectorizer.transform(
+                    text
+                )
+            ).tocoo()
         )
 
     # sort coordinate matrix based by score then word index
@@ -140,5 +147,5 @@ class sklearn_TFIDF(object):
 
     def get_text_keywords(self, text, n_keywords=10):
         return np.array(self.feature_names)[
-            list(self.sort_coo(self.tfidf_text(text).tocoo()).keys())[:n_keywords]
+            list(self.tfidf_text(text).keys())[:n_keywords]
         ].tolist()
