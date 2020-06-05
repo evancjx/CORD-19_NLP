@@ -1,5 +1,6 @@
 
-from .tf_idf import term_freq, doc_tf_idf
+# from .tf_idf import term_freq, doc_tf_idf
+from .tf_idf import TFIDF
 
 from math import log, sqrt
 import numpy as np
@@ -24,9 +25,9 @@ def search_relevant_articles_tf_idf(
 ):
     query_processed = query_preprocess_func(query)
 
-    query_tf = term_freq(query_processed)
+    query_tf = TFIDF.term_freq(query_processed)
 
-    query_td_idf = doc_tf_idf(
+    query_td_idf = TFIDF.doc_tf_idf(
         doc_tf = query_tf, 
         term_doc_freq = term_doc_freq, 
         len_corpus = len(corpus_doc_tf_idf)
@@ -44,3 +45,22 @@ def search_relevant_articles_tf_idf(
     ).T
     
     return result_df
+
+def sk_tfidf_search(
+    query_string, data, sk_tfidf, n_articles=10
+):
+    query_term_tfidf = sk_tfidf.tfidf_text(query_string)
+    
+    query_parsed_list_corpus_id = sorted(
+        [
+            (idx, doc_dot_product(query_term_tfidf, sk_tfidf.corpus_doc_tfidf[idx]))
+            for idx in range(len(sk_tfidf.corpus_doc_tfidf))
+        ], key=lambda item: item[1], reverse=False
+    )
+
+    return pd.concat(
+        [
+            data.iloc[query_parsed_list_corpus_id[-idx][0]]
+            for idx in range(n_articles)
+        ], ignore_index=True, axis=1
+    ).T
