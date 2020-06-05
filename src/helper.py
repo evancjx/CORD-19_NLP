@@ -28,3 +28,10 @@ def form_dict(data_df, new_key, new_value):
                 continue
             inverse_dict[key].append(value)
     return inverse_dict
+
+def chunks(max_length, interval, overlap):
+    for idx in list(range(0, max_length, interval))+[max_length]:
+        if idx == 0:
+            yield idx, idx+int(overlap)
+        else:
+            yield idx-int(overlap), idx+int(overlap)
