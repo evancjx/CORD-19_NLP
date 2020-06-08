@@ -1,4 +1,5 @@
 
+from .covid_19_tf_idf import doc_dot_product
 from .helper import sort_dict
 from collections import Counter
 from math import log, sqrt
@@ -84,6 +85,16 @@ class TFIDF(object):
 
     def get_text_keywords(self, text, n_keywords=10):
         return list(sort_dict(self.tfidf_text(self.term_freq(text)), 'value', True))[:n_keywords]
+
+    def search_similar(self, query_tokens):
+        query_tf_idf = self.tfidf_text(self.term_freq(query_tokens))
+
+        return sorted(
+            [
+                (idx, doc_dot_product(query_tf_idf, self.corpus_doc_tfidf[idx]))
+                for idx in range(len(self.corpus_doc_tfidf))
+            ], key=lambda x: x[1], reverse=True
+        )
 
 from .text_preprocessing import STOP_WORDS
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
