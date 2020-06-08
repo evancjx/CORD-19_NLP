@@ -10,8 +10,12 @@ class TFIDF(object):
         pass
     
     def term_freq(self, doc):
+        if isinstance(doc, str):
+            doc = doc.split()
+        elif not isinstance(doc, list):
+            raise TypeError('doc has to be either a String or a List')
         tf = Counter()
-        tf.update(doc.split())
+        tf.update(doc)
         return tf
 
     def document_frequency(self, corpus):
