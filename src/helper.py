@@ -1,5 +1,30 @@
 
-def sort_list_dict(_list_dict, by, descending=False):
+from os.path import isdir
+from os import mkdir
+import pickle
+def pickle_dump(file_path, obj):
+    dest_folder = file_path.rsplit('/',1)[0]
+    
+    if not isdir(dest_folder): 
+        mkdir(dest_folder) # Create folder if it does not exist
+
+    with open(file_path, 'wb') as f:
+        pickle.dump(obj, f)
+
+def pickle_load(file_path):
+    dest_folder = file_path.rsplit('/',1)[0]
+
+    if not isdir(dest_folder): 
+        print(f'{dest_folder} not found')
+        return
+
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
+
+def sort_list_dict(_list_dict, by=0, descending=False):
+    if by == 'key': by = 0
+    elif by == 'value': by = 1
+    elif not by in [0, 1, 'key', 'value']: raise ValueError('Invalid')
     return sorted(_list_dict, key=lambda item: item[by], reverse=descending)
 
 def sort_dict(_dict, by=0, descending=False):
