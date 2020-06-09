@@ -16,6 +16,43 @@ regex_single_char = r'\b[a-zA-Z]\b'
 
 STOP_WORDS = STOP_WORDS | set(stopwords.words('english'))
 
+class spacy_NLP(object):
+    def __init__(self, model='en_core_web_sm', max_length=2000000):
+        self.nlp = spacy.load(model)
+        self.nlp.max_length = max_length
+
+    def __valid_token(self, tk):
+        return tk.is_alpha and not tk.is_stop
+
+    def __get_lemma(self, tk):
+        if tk.pos_ == 'PRON' or tk.lemma_ == '-PRON-': return tk.text.lower()
+        return tk.lemma_.lower()
+
+    def tokenize(self, record):
+        return [
+            self.__get_lemma(tk) 
+            for tk in self.nlp(record) 
+            if self.__valid_token(tk)
+        ]
+
+class nltk_NLP(object):
+    tokenizer = nltk_regex_tokenizer(pattern=r'\s+', gaps=True).tokenize
+
+    def __init__(self, stemming=None, lemmatisation=None):
+        if stemming and lemmatisation:
+            self.stemming = stemming().stem
+            self.lemmatisation = lemmatisation().lemmatize
+
+            self.tokenizer = lambda text: [
+                self.stemming(token) for token in [
+                    self.lemmatisation(word)
+                    for word in text.split()
+                ]
+            ]
+    
+    def tokenize(self, text):
+        return self.tokenizer(text)
+
 def retrieve_abbreviation(
     text, syntax=regex_abbreviation
 ):
@@ -37,7 +74,7 @@ def remove_url(text):
     return re.sub(url_regex, '', text)
 
 def text_preprocess(
-    text, tokenizer=None, stopwords=[]
+    text, tokenizer=spacy_NLP('en_core_web_sm').tokenize_API, stopwords=STOP_WORDS
 ): 
     text = remove_html_elements(text)
 
@@ -75,40 +112,3 @@ def text_preprocess(
         )
     
     return regex_replace(regex_replace(text, regex_single_char, ''), regex_white_spaces, ' ')
-
-class spacy_NLP(object):
-    def __init__(self, model='en_core_web_sm'):
-        self.nlp = spacy.load(model)
-        self.nlp.max_length = 1500000
-
-    def __valid_token(self, tk):
-        return tk.is_alpha and not tk.is_stop
-
-    def __get_lemma(self, tk):
-        if tk.pos_ == 'PRON' or tk.lemma_ == '-PRON-': return tk.text.lower()
-        return tk.lemma_.lower()
-
-    def tokenize_API(self):
-        return lambda record: [
-            self.__get_lemma(tk) 
-            for tk in self.nlp(record) 
-            if self.__valid_token(tk)
-        ]
-
-class nltk_NLP(object):
-    tokenizer = nltk_regex_tokenizer(pattern=r'\s+', gaps=True).tokenize
-
-    def __init__(self, stemming=None, lemmatisation=None):
-        if stemming and lemmatisation:
-            self.stemming = stemming().stem
-            self.lemmatisation = lemmatisation().lemmatize
-
-            self.tokenizer = lambda text: [
-                self.stemming(token) for token in [
-                    self.lemmatisation(word)
-                    for word in text.split()
-                ]
-            ]
-    
-    def tokenize_API(self, tokenizer=tokenizer):
-        return lambda text: tokenizer(text)
