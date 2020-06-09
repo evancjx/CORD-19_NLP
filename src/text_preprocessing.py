@@ -74,7 +74,7 @@ def remove_url(text):
     return re.sub(url_regex, '', text)
 
 def text_preprocess(
-    text, tokenizer=spacy_NLP('en_core_web_sm').tokenize_API, stopwords=STOP_WORDS
+    text, tokenizer=spacy_NLP('en_core_web_sm').tokenize, stopwords=STOP_WORDS
 ): 
     text = remove_html_elements(text)
 
