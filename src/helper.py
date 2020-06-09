@@ -27,7 +27,7 @@ def sort_list_dict(_list_dict, by=0, descending=False):
     elif not by in [0, 1, 'key', 'value']: raise ValueError('Invalid')
     return sorted(_list_dict, key=lambda item: item[by], reverse=descending)
 
-def sort_dict(_dict, by=0, descending=False):
+def sort_dict(_dict, by=0, descending=False, limit=None):
     '''
         by : {0/'key', 1/'value'}, default 0
     '''
@@ -35,13 +35,18 @@ def sort_dict(_dict, by=0, descending=False):
     elif by == 'value': by = 1
     elif not by in [0, 1, 'key', 'value']: raise ValueError('Invalid')
     
+    _sorted = sorted(
+        _dict.items(), 
+        key=lambda item: item[by], 
+        reverse=descending
+    )
+    
+    if limit:
+        _sorted = _sorted[:limit]
+    
     return {
         k:v 
-        for k, v in sorted(
-            _dict.items(), 
-            key=lambda item: item[by], 
-            reverse=descending
-        )
+        for k, v in _sorted
     }
 
 def form_dict(data_df, new_key, new_value):
