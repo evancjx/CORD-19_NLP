@@ -12,9 +12,10 @@ class BM25:
         self.k1=k1; self.b=b
 
         if text_preprocessor:
-            self.corpus = self._text_prep(corpus)
+            corpus = self._text_prep(corpus)
 
-        self._initialize(corpus)
+        self.corpus = corpus
+        self._initialize()
         self._cal_idf()
 
     def _text_prep(self, corpus):
@@ -40,14 +41,14 @@ class BM25:
         tf.update(document_tokens)
         return tf
 
-    def _initialize(self, corpus):
+    def _initialize(self):
         self.len_doc = []
         self.corpus_doc_tf = []
         self.term_df = Counter()
 
         total_length = 0
         for document in tqdm(
-            corpus, desc='Conducting TF and DF on corpus'
+            self.corpus, desc='Conducting TF and DF on corpus'
         ):
             document = self._check_doc(document)
             self.len_doc.append(len(document))
