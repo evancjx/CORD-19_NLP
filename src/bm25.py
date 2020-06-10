@@ -1,11 +1,12 @@
 
+from .tfidf import TFIDF
 from collections import Counter
 from math import log
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import numpy as np
 
-class BM25:
+class BM25(TFIDF):
     def __init__(self, corpus, text_preprocessor=None, k1=1.2, b=0.75):
         self.n_doc = len(corpus)
         self.text_preprocessor = text_preprocessor
@@ -17,29 +18,6 @@ class BM25:
         self.corpus = corpus
         self._initialize()
         self._cal_idf()
-
-    def _text_prep(self, corpus):
-        with Pool(cpu_count()) as pool:
-            return list(
-                tqdm(
-                    pool.imap(
-                        self.text_preprocessor, corpus
-                    ), total=self.n_doc
-                ), 
-            )
-    
-    def _check_doc(self, document):
-        if isinstance(document, list):
-            return document
-        elif isinstance(document, str):
-            return document.split()
-        else:
-            raise TypeError('Document has to be either a String or a List. Given {} instead.'.format(type(document)))
-
-    def _term_freq(self, document_tokens):
-        tf = Counter()
-        tf.update(document_tokens)
-        return tf
 
     def _initialize(self):
         self.len_doc = []
@@ -67,14 +45,14 @@ class BM25:
         '''
         self.term_idf = {
             word: log(
-                # 1 + # prevent negative values (?)
+                1 + # prevent negative values (?)
                 (
                     (self.n_doc - doc_freq + 0.5) /
                     (doc_freq + 0.5)
                 )
             )
             for word, doc_freq in tqdm(
-                self.term_df.items(), desc='Calculate IDF'
+                self.term_df.items(), desc='[BM25] IDF for each term'
             )
         }
     
