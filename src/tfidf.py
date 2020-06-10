@@ -48,14 +48,12 @@ class TFIDF:
         
         self.corpus_doc_tf = list()
         self.term_df = Counter() # Count the number of time the word (term) happens in different documents
-        self.vocabulary = set()
 
         for document in tqdm(
             self.corpus, 
             desc='TF and DF for each term on each document'
         ):
             document = self._check_doc(document)
-            self.vocabulary = self.vocabulary | set(document)
             tf = self._term_freq(document)
             self.corpus_doc_tf.append(tf)
             self.term_df.update(tf.keys())
@@ -107,13 +105,15 @@ class TFIDF:
         document = self._check_doc(document)
         return list(sort_dict(self.tfidf_doc(self._term_freq(document)), 'value', True))[:n_keywords]
 
-    def search_similar(self, document):
+    def search_similar(self, document, top_n=10):
         document = self._check_doc(document)
         query_tf_idf = self.tfidf_doc(self._term_freq(document))
 
-        return sorted(
-            [
-                (idx, doc_dot_product(query_tf_idf, self.corpus_doc_tfidf[idx]))
-                for idx in range(self.n_doc)
-            ], key=lambda x: x[1], reverse=True
+        return sort_dict(
+            dict(
+                [
+                    (idx, doc_dot_product(query_tf_idf, self.corpus_doc_tfidf[idx]))
+                    for idx in range(self.n_doc)
+                ]
+            ), 'value', True, top_n
         )
