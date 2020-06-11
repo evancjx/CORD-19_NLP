@@ -78,8 +78,8 @@ class BM25(TFIDF):
                 (
                     query_token_freq + self.k1 * (
                         1 - self.b + self.b * (
-                            # np.array(self.len_doc) / 
-                            self.n_doc /
+                            np.array(self.len_doc) / 
+                            # self.n_doc /
                             self.avgDl
                         )
                     )
@@ -106,10 +106,8 @@ class BM25L(BM25):
         '''
         self.term_idf = {
             word: log(
-                (
-                    (self.n_doc + 1) /
-                    (doc_freq + 0.5)
-                )
+                (self.n_doc + 1) /
+                (doc_freq + 0.5)
             )
             for word, doc_freq in tqdm(
                 self.term_df.items(), desc='[BM25] IDF for each term'
@@ -132,6 +130,52 @@ class BM25L(BM25):
                 )
             )
 
+        return sort_dict(
+            dict(zip(range(self.n_doc), score)),
+            'value', True, top_n
+        )
+
+class BM25plus(BM25):
+    def __init__(self, corpus, text_preprocessor=None, k1=1.2, b=0.75, delta=0.5):
+        self.delta = 0.5
+        super().__init__(corpus, text_preprocessor, k1, b)
+
+    def _cal_idf(self):
+        '''
+            Rare items are more informative than frequent items
+            Low weights for frequent terms
+            High weights for rare terms
+
+            http://www.cs.otago.ac.nz/homepages/andrew/papers/2014-2.pdf
+        '''
+        self.term_idf = {
+            word: log(
+                (self.n_doc + 1) / doc_freq
+            )
+            for word, doc_freq in tqdm(
+                self.term_df.items(), desc='[BM25] IDF for each term'
+            )
+        }
+    
+    def get_scores(self, query, top_n=10):
+        query = self._check_doc(query)
+
+        score = np.zeros(self.n_doc)
+        for query_token in query:
+            query_token_freq = np.array([(doc.get(query_token) or 0) for doc in self.corpus_doc_tf])
+
+            score += (self.term_idf.get(query_token) or 0) * (
+                (
+                    (
+                        (self.k1 + 1) * query_token_freq
+                    ) /
+                    (
+                        self.k1 * (1 - self.b + self.b * (np.array(self.len_doc)/self.avgDl)) + query_token_freq
+                    ) + 
+                    self.delta
+                )
+            )
+        
         return sort_dict(
             dict(zip(range(self.n_doc), score)),
             'value', True, top_n
