@@ -1,12 +1,17 @@
 
+from .covid_19_tf_idf import doc_dot_product
+from .helper import sort_dict
 from .text_preprocessing import STOP_WORDS
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from tqdm import tqdm
 import numpy as np
+
 class sklearn_TFIDF:
     feature_names = None
 
     def __init__(
         self, 
+        corpus,
         count_vectorizer=CountVectorizer(
             max_df=0.8, stop_words=STOP_WORDS, max_features=10000, ngram_range=(1,1)
         ), 
@@ -14,15 +19,29 @@ class sklearn_TFIDF:
             smooth_idf=True,use_idf=True
         )
     ):
+        self.n_doc = len(corpus)
+        
         self.count_vectorizer = count_vectorizer
         self.tfidf_transformer = tfidf_transformer
-    
-    def tfidf_corpus(self, corpus):
-        self.corpus = corpus
 
+        self.corpus = corpus
+        self._cal_tfidf()
+    
+    # sort coordinate matrix based by score then word index
+    def _sort_coo(self, coo_matrix, descending=True):
+        return {
+            k: v
+            for k, v in sorted(
+                zip(coo_matrix.col, coo_matrix.data), 
+                key=lambda x: (x[1], x[0]), 
+                reverse=descending
+            )
+        }
+    
+    def _cal_tfidf(self):
         self.tfidf_transformer.fit(
             self.count_vectorizer.fit_transform(
-                corpus
+                self.corpus
             )
         )
     
@@ -30,7 +49,7 @@ class sklearn_TFIDF:
 
         self.corpus_doc_tfidf = [
             self.tfidf_text(doc)
-            for doc in tqdm(corpus, desc='Conduct TFIDF for individual documents')
+            for doc in tqdm(self.corpus, desc='Conduct TFIDF for individual documents')
         ]
 
     def tfidf_text(self, text):
@@ -40,7 +59,7 @@ class sklearn_TFIDF:
         if not isinstance(text, list):
             text = [text]
 
-        return self.sort_coo(
+        return self._sort_coo(
             self.tfidf_transformer.transform(
                 self.count_vectorizer.transform(
                     text
@@ -48,18 +67,19 @@ class sklearn_TFIDF:
             ).tocoo()
         )
 
-    # sort coordinate matrix based by score then word index
-    def sort_coo(self, coo_matrix, descending=True):
-        return {
-            k: v
-            for k, v in sorted(
-                zip(coo_matrix.col, coo_matrix.data), 
-                key=lambda x: (x[1], x[0]), 
-                reverse=descending
-            )
-        }
-
     def get_text_keywords(self, text, n_keywords=10):
         return np.array(self.feature_names)[
             list(self.tfidf_text(text).keys())[:n_keywords]
         ].tolist()
+
+    def search_similar(self, document, top_n=10):
+        query_term_tfidf = self.tfidf_text(document)
+        
+        return sort_dict(
+            dict(
+                [
+                    (idx, doc_dot_product(query_term_tfidf, self.corpus_doc_tfidf[idx]))
+                    for idx in range(len(self.corpus_doc_tfidf))
+                ]
+            ), 'value', True, top_n
+        )
