@@ -1,6 +1,5 @@
 
-from .covid_19_tf_idf import doc_dot_product
-from .helper import sort_dict
+from .helper import doc_dot_product, sort_dict
 from .text_preprocessing import STOP_WORDS
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from tqdm import tqdm

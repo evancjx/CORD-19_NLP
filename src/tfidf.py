@@ -1,6 +1,5 @@
 
-from .covid_19_tf_idf import doc_dot_product
-from .helper import sort_dict
+from .helper import doc_dot_product, sort_dict
 from collections import Counter
 from math import log, sqrt
 from multiprocessing import Pool, cpu_count

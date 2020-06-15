@@ -65,3 +65,15 @@ def chunks(max_length, interval, overlap):
             yield idx, idx+int(overlap)
         else:
             yield idx-int(overlap), idx+int(overlap)
+
+def doc_dot_product(vector, doc_vector):
+    dot_product = 0.0
+    if len(vector) < len(doc_vector):
+        for key in vector:
+            if key in doc_vector:
+                dot_product+=vector[key]*doc_vector[key]
+    else:
+        for key in doc_vector:
+            if key in vector:
+                dot_product+=vector[key]*doc_vector[key]
+    return dot_product
