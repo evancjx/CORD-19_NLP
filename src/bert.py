@@ -15,7 +15,7 @@ class BERT:
     def _split_document(self, question, doc):
         self.seq_ids = self.QA_TOKENIZER.encode(question, doc)
         doc_tokens = doc.split()
-        num_split = int(np.ceil(len(self.seq_ids)*1.1/256))
+        num_split = int(np.ceil(len(self.seq_ids)*1.2/256))
         if num_split > 1:
             length_words = len(doc_tokens)
             group_num = length_words//num_split
@@ -32,10 +32,9 @@ class BERT:
             return [self.seq_ids]
 
     def reconstructText(self, tokens, start=0, stop=-1):
-        tokens = tokens[start: stop]
+        tokens = tokens[start:stop]
         if '[SEP]' in tokens:
-            sepind = tokens.index('[SEP]')
-            tokens = tokens[sepind+1:]
+            tokens = tokens[tokens.index('[SEP]')+1:]
         txt = ' '.join(tokens)
         txt = txt.replace(' ##', '')
         txt = txt.replace('##', '')
