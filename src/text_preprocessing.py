@@ -13,6 +13,7 @@ regex_abbreviation = r'\((?!\s)[^a-z^()\s]+(?<!\s)\)|\b[A-Z]{2,}'
 regex_special_char_digit = r'(\d|\W)'
 regex_white_spaces = r'\s\s+'
 regex_single_char = r'\b[a-zA-Z]\b'
+regex_url = r'\b(?:(?:http|https):\/\/)?([-a-zA-Z0-9.]{2,256}\.[a-z]{2,4})\b(?:\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?\b|\b(www)([-a-zA-Z0-9.]{2,256}[a-z]{2,4})\b'
 
 STOP_WORDS = STOP_WORDS | set(stopwords.words('english'))
 
@@ -53,25 +54,14 @@ class nltk_NLP(object):
     def tokenize(self, text):
         return self.tokenizer(text)
 
-def retrieve_abbreviation(
-    text, syntax=regex_abbreviation
-):
-    return re.findall(pattern=syntax, string=text)
-
-def regex_replace(
-    text, syntax, replace=''
-):
+def regex_replace(text, syntax, replace=''):
     return re.sub(pattern=syntax, repl=replace, string=text)
 
 def remove_html_tags(text):
     return ' '.join(item.strip() for item in BeautifulSoup(text, features='lxml').find_all(text=True))
 
 def remove_html_elements(text):
-    return html.unescape(remove_html_tags(remove_url(text)))
-
-def remove_url(text):
-    url_regex = r'\b(?:(?:http|https):\/\/)?([-a-zA-Z0-9.]{2,256}\.[a-z]{2,4})\b(?:\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?\b|\b(www)([-a-zA-Z0-9.]{2,256}[a-z]{2,4})\b'
-    return re.sub(url_regex, '', text)
+    return html.unescape(remove_html_tags(regex_replace(text, regex_url)))
 
 def text_preprocess(
     text, tokenizer=spacy_NLP('en_core_web_sm').tokenize, stopwords=STOP_WORDS
@@ -80,7 +70,7 @@ def text_preprocess(
 
     text_abbreviations = set(
         regex_replace(abb, r'\(|\)', '')
-        for abb in set(retrieve_abbreviation(text))
+        for abb in set(re.findall(regex_abbreviation, text))
     )
     # print('{} abbreviation in text'.format(', '.join(text_abbreviations)), end='\n\n')
 
