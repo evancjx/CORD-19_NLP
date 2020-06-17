@@ -86,10 +86,7 @@ class BM25(TFIDF):
                 )
             )
         
-        return sort_dict(
-            dict(zip(range(self.n_doc), score)),
-            'value', True, top_n
-        )
+        return score
 
 class BM25L(BM25):
     def __init__(self, corpus, text_preprocessor=None, k1=1.2, b=0.75, delta=0.5):
@@ -130,10 +127,7 @@ class BM25L(BM25):
                 )
             )
 
-        return sort_dict(
-            dict(zip(range(self.n_doc), score)),
-            'value', True, top_n
-        )
+        return score
 
 class BM25plus(BM25):
     def __init__(self, corpus, text_preprocessor=None, k1=1.2, b=0.75, delta=0.5):
@@ -176,7 +170,4 @@ class BM25plus(BM25):
                 )
             )
         
-        return sort_dict(
-            dict(zip(range(self.n_doc), score)),
-            'value', True, top_n
-        )
+        return score

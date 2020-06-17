@@ -108,11 +108,7 @@ class TFIDF:
         document = self._check_doc(document)
         query_tf_idf = self.tfidf_doc(self._term_freq(document))
 
-        return sort_dict(
-            dict(
-                [
-                    (idx, doc_dot_product(query_tf_idf, self.corpus_doc_tfidf[idx]))
-                    for idx in range(self.n_doc)
-                ]
-            ), 'value', True, top_n
-        )
+        return [
+            doc_dot_product(query_tf_idf, self.corpus_doc_tfidf[idx])
+            for idx in range(self.n_doc)
+        ]

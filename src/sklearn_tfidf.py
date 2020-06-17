@@ -74,11 +74,7 @@ class sklearn_TFIDF:
     def search_similar(self, document, top_n=10):
         query_term_tfidf = self.tfidf_text(document)
         
-        return sort_dict(
-            dict(
-                [
-                    (idx, doc_dot_product(query_term_tfidf, self.corpus_doc_tfidf[idx]))
-                    for idx in range(len(self.corpus_doc_tfidf))
-                ]
-            ), 'value', True, top_n
-        )
+        return [
+            doc_dot_product(query_term_tfidf, self.corpus_doc_tfidf[idx])
+            for idx in range(self.n_doc)
+        ]
